@@ -1,0 +1,25 @@
+@use "./tailwind.scss";
+
+@use "@carbon/react/scss/themes";
+@use "@carbon/react/scss/theme" with (
+  $theme: themes.$g90
+);
+
+@use '@carbon/react/scss/components/button';
+@use '@carbon/react/scss/components/tile';
+
+:root {
+  @include theme.theme();
+}
+
+body {
+  background: theme.$background;
+  color: theme.$background-inverse;
+}
+
+html,
+#root,
+body {
+  width: 100%;
+  height: 100%;
+}
