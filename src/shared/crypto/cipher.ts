@@ -3,8 +3,8 @@ import { decodeBytes, encodeString } from "./encoder";
 export class Cipher {
   private salt: ArrayBuffer;
 
-  constructor() {
-    this.salt = this.unpack(import.meta.env.VITE_SALT);
+  constructor(salt?: string) {
+    this.salt = this.unpack(salt || import.meta.env.VITE_SALT);
   }
 
   encrypt = async (data: string, key: CryptoKey) => {
@@ -12,7 +12,7 @@ export class Cipher {
     const iv = this.generateIv();
     const params = { name: "AES-GCM", iv };
     const cipher = await crypto.subtle.encrypt(params, key, encoded);
-    return { cipher: this.pack(cipher), iv: this.pack(iv) };
+    return { encrypted: this.pack(cipher), iv: this.pack(iv) };
   };
 
   decrypt = async (cipher: string, key: CryptoKey, iv: string) => {
@@ -40,7 +40,7 @@ export class Cipher {
     const keyMaterial = await this.getKeyMaterial(password);
     const wrappingKey = await this.getKey(keyMaterial);
 
-    return window.crypto.subtle.wrapKey(
+    return crypto.subtle.wrapKey(
       "raw",
       keyToWrap,
       wrappingKey,
@@ -50,7 +50,7 @@ export class Cipher {
 
   unwrapKey = async (wrappedKey: ArrayBuffer, password: string) => {
     const unwrappingKey = await this.getUnwrappingKey(password);
-    return window.crypto.subtle.unwrapKey(
+    return crypto.subtle.unwrapKey(
       "raw",
       wrappedKey,
       unwrappingKey,
@@ -63,7 +63,7 @@ export class Cipher {
 
   private getUnwrappingKey = async (password: string) => {
     const keyMaterial = await this.getKeyMaterial(password);
-    return window.crypto.subtle.deriveKey(
+    return crypto.subtle.deriveKey(
       {
         name: "PBKDF2",
         salt: this.salt,
@@ -88,7 +88,7 @@ export class Cipher {
   };
 
   private getKey = (keyMaterial: CryptoKey) => {
-    return window.crypto.subtle.deriveKey(
+    return crypto.subtle.deriveKey(
       {
         name: "PBKDF2",
         salt: this.salt,
@@ -107,7 +107,7 @@ export class Cipher {
   };
 
   private unpack = (packed: string): ArrayBuffer => {
-    const string = window.atob(packed);
+    const string = atob(packed);
     const buffer = new ArrayBuffer(string.length);
     const bufferView = new Uint8Array(buffer);
     for (let i = 0; i < string.length; i++) {

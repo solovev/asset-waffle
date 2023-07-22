@@ -1,8 +1,5 @@
-import { readCache, Cache, Cipher } from "@/shared";
+import { readCache, Cache } from "@/shared";
 import React from "react";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(window as any).Cipher = Cipher;
 
 interface AccessContextValue {
   passcode: string;
