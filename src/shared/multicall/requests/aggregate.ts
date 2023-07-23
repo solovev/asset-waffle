@@ -21,6 +21,7 @@ interface WalletBalances extends Balances {
 }
 
 export interface AggregatedData {
+  asset: { decimals: number; supply: number; symbol: string };
   balances: { [wallet: string]: WalletBalances };
   hasErrors: boolean;
 }
@@ -41,7 +42,10 @@ export async function fetchAndAggregateData(
 
   const [asset] = listOfAssets;
 
-  const { decimals, walletBalances } = await getAssetData(asset, wallets);
+  const { decimals, supply, symbol, walletBalances } = await getAssetData(
+    asset,
+    wallets
+  );
 
   const price = await getPrice(decimals, asset);
 
@@ -73,7 +77,15 @@ export async function fetchAndAggregateData(
       hasErrors ||= pendingReward.hasError || userInfo.hasError;
     }
   }
-  return { balances, hasErrors };
+  return {
+    asset: {
+      decimals: Number(decimals),
+      supply: convertToNumber(decimals, supply),
+      symbol,
+    },
+    balances,
+    hasErrors,
+  };
 }
 
 export interface SumAggregatedData extends Balances {
