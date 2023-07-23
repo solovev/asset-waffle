@@ -1,12 +1,16 @@
-@use "./tailwind.scss";
+@use "./reset.scss";
 
 @use "@carbon/react/scss/themes";
 @use "@carbon/react/scss/theme" with (
   $theme: themes.$g90
 );
 
-@use '@carbon/react/scss/components/button';
-@use '@carbon/react/scss/components/tile';
+@use "@carbon/react/scss/components/button";
+@use "@carbon/react/scss/components/tile";
+@use "@carbon/react/scss/components/text-input";
+@use "@carbon/react/scss/components/inline-loading";
+
+@use "./tailwind.scss";
 
 :root {
   @include theme.theme();

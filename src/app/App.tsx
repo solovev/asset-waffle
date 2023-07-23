@@ -1,13 +1,9 @@
-import { Providers } from "@/app/providers/Providers";
-
-import { MainPage } from "@/pages";
+import { MainPage, LoginPage } from "@/pages";
+import { useAccessContext } from "./providers";
 
 function App() {
-  return (
-    <Providers>
-      <MainPage />
-    </Providers>
-  );
+  const { hasAccess } = useAccessContext();
+  return hasAccess ? <MainPage /> : <LoginPage />;
 }
 
 export default App;

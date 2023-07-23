@@ -36,23 +36,23 @@ export class Cipher {
   wrapKey = async (
     keyToWrap: CryptoKey,
     password: string
-  ): Promise<ArrayBuffer> => {
+  ): Promise<string> => {
     const keyMaterial = await this.getKeyMaterial(password);
     const wrappingKey = await this.getKey(keyMaterial);
-
-    return crypto.subtle.wrapKey(
+    const key = await crypto.subtle.wrapKey(
       "raw",
       keyToWrap,
       wrappingKey,
       "AES-KW"
     );
+    return this.pack(key);
   };
 
-  unwrapKey = async (wrappedKey: ArrayBuffer, password: string) => {
+  unwrapKey = async (wrappedKey: string, password: string) => {
     const unwrappingKey = await this.getUnwrappingKey(password);
     return crypto.subtle.unwrapKey(
       "raw",
-      wrappedKey,
+      this.unpack(wrappedKey),
       unwrappingKey,
       "AES-KW",
       "AES-GCM",
