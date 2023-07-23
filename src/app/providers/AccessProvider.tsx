@@ -1,4 +1,11 @@
-import { readCache, Cache, Cipher, waitFor, writeCache } from "@/shared";
+import {
+  readCache,
+  Cache,
+  Cipher,
+  waitFor,
+  writeCache,
+  clearCache,
+} from "@/shared";
 import React, { useContext } from "react";
 
 const cachedPassword = readCache(Cache.ACCESS, "");
@@ -11,6 +18,7 @@ interface AccessContextValue {
   error: string | null;
   attempt: number;
   submitPassword: (value: string) => void;
+  logout: () => void;
 }
 
 const AccessContext = React.createContext<AccessContextValue>({
@@ -21,6 +29,7 @@ const AccessContext = React.createContext<AccessContextValue>({
   error: null,
   attempt: 0,
   submitPassword: () => {},
+  logout: () => {},
 });
 
 export function AccessProvider({ children }: React.PropsWithChildren) {
@@ -64,6 +73,14 @@ export function AccessProvider({ children }: React.PropsWithChildren) {
     tryPassword(password);
   }, [password, attempt]);
 
+  const logout = React.useCallback(() => {
+    clearCache(Cache.ACCESS);
+    setKey(key);
+    setError(null);
+    setAttempt(0);
+    setLoading(false);
+  }, [key]);
+
   return (
     <AccessContext.Provider
       value={{
@@ -74,6 +91,7 @@ export function AccessProvider({ children }: React.PropsWithChildren) {
         key,
         error,
         submitPassword,
+        logout,
       }}
     >
       {children}

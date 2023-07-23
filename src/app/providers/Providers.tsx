@@ -1,5 +1,11 @@
-import { AccessProvider } from "./AccessProvider";
+import { WalletsProvider, AccessProvider, PoolsProvider } from ".";
 
 export function Providers({ children }: React.PropsWithChildren) {
-    return <AccessProvider>{children}</AccessProvider>;
+  return (
+    <AccessProvider>
+      <WalletsProvider>
+        <PoolsProvider>{children}</PoolsProvider>
+      </WalletsProvider>
+    </AccessProvider>
+  );
 }

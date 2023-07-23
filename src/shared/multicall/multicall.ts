@@ -1,5 +1,5 @@
-import { Contract, Interface, InterfaceAbi, Provider } from "ethers";
-import { MULTICALL_ABI } from "./multicall-abi";
+import { Contract, Interface, InterfaceAbi, JsonRpcProvider, Provider } from "ethers";
+import { MULTICALL_ABI } from "./abi/multicall-abi";
 
 export interface MulticallRequest {
   address: string;
@@ -91,4 +91,17 @@ export class Multicall {
           returnData
         )[0]);
   }
+}
+
+export async function makeMulticall(requests: MulticallRequest[]) {
+  const multicallAddress = import.meta.env.VITE_MULTICALL_ADDRESS;
+  const provider = new JsonRpcProvider(import.meta.env.VITE_RPC_URL);
+  const multicall = new Multicall(multicallAddress, provider, requests);
+  const responses = await multicall.makeRequest();
+  return responses.map((response, index) => {
+    return {
+      request: requests[index],
+      response: response,
+    };
+  });
 }
