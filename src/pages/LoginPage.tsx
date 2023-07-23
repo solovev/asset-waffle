@@ -1,5 +1,5 @@
 import { useAccessContext } from "@/app/providers";
-import { Button, TextInput, InlineLoading } from "@carbon/react";
+import { Button, PasswordInput } from "@mantine/core";
 import React, { ChangeEvent } from "react";
 
 export const LoginPage = () => {
@@ -27,18 +27,17 @@ export const LoginPage = () => {
   return (
     <div className="flex justify-center items-center w-full h-full">
       <div className="sm:w-96 w-full px-5">
-        <TextInput
+        <PasswordInput
           value={password}
+          placeholder="Your password"
           id="password"
-          type="password"
-          labelText="Password"
           onChange={handleChange}
           onSubmit={handleSubmit}
           onKeyDown={handleKeyDown}
           disabled={loading}
         />
         <div className="mt-4">
-          {renderLoading() || renderButton()}
+          {renderButton()}
           {renderTip()}
         </div>
       </div>
@@ -48,20 +47,13 @@ export const LoginPage = () => {
   function renderButton() {
     return (
       <Button
-        kind={error ? "danger" : "primary"}
-        size="sm"
+        loading={loading}
+        color={error ? "red" : undefined}
         onClick={handleSubmit}
       >
         Log In
       </Button>
     );
-  }
-
-  function renderLoading() {
-    if (!loading) {
-      return null;
-    }
-    return <InlineLoading description="Logging in..." />;
   }
 
   function renderTip() {

@@ -1,28 +1,4 @@
-@use "./reset.scss";
-
-@use "@carbon/react/scss/themes";
-@use "@carbon/react/scss/theme" with (
-  $theme: themes.$g90
-);
-
-@use "@carbon/react/scss/components/button";
-@use "@carbon/react/scss/components/tile";
-@use "@carbon/react/scss/components/text-input";
-@use "@carbon/react/scss/components/loading";
-@use "@carbon/react/scss/components/inline-loading";
-@use "@carbon/react/scss/components/select";
-@use "@carbon/react/scss/components/contained-list";
-
 @use "./tailwind.scss";
-
-:root {
-  @include theme.theme();
-}
-
-body {
-  background: theme.$background;
-  color: theme.$background-inverse;
-}
 
 html,
 #root,

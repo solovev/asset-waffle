@@ -13,7 +13,7 @@ interface Result {
   loading: boolean;
 }
 
-export function useAggregatedData(forWallets: string[]): Result {
+export function useAggregatedData(): Result {
   const { wallets, loading: loadingWallets } = useWalletsContext();
   const { pools, loading: loadingPools } = usePoolsContext();
 
@@ -26,13 +26,13 @@ export function useAggregatedData(forWallets: string[]): Result {
       if (pools.length > 0 && wallets.length > 0) {
         setLoading(true);
         const data = await fetchAndAggregateData(pools, wallets);
-        const sumData = sumAggregatedData(forWallets, data);
+        const sumData = sumAggregatedData(wallets, data);
         setSum(sumData);
         setData(data);
         setLoading(false);
       }
     })();
-  }, [forWallets, pools, wallets, setData, setLoading]);
+  }, [pools, wallets, setData, setLoading]);
 
   return {
     loading: loading || loadingWallets || loadingPools,
