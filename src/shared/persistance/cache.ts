@@ -41,7 +41,7 @@ export function clearCache(key: Cache) {
   }
 }
 
-export async function writeEncryptedCache(
+export async function writeCipherCache(
   cacheKey: Cache,
   cipherKey: CryptoKey,
   value: NonNullable<unknown>
@@ -52,7 +52,7 @@ export async function writeEncryptedCache(
   localStorage.setItem(cacheKey, encrypted + SEPARATOR + iv);
 }
 
-export async function readEncryptedCache<T = NonNullable<unknown>>(
+export async function readCipherCache<T = NonNullable<unknown>>(
   cacheKey: Cache,
   cipherKey: CryptoKey,
   defaultValue: T

@@ -1,4 +1,6 @@
-import { usePoolsContext, useWalletsContext } from "@/app/providers";
+import {
+  useStaticDataContext,
+} from "@/app/providers";
 import {
   AggregatedData,
   SumAggregatedData,
@@ -14,9 +16,7 @@ interface Result {
 }
 
 export function useAggregatedData(): Result {
-  const { wallets, loading: loadingWallets } = useWalletsContext();
-  const { pools, loading: loadingPools } = usePoolsContext();
-
+  const { wallets, pools, loading: loadingStaticData } = useStaticDataContext();
   const [loading, setLoading] = React.useState(true);
   const [data, setData] = React.useState<AggregatedData | null>(null);
   const [sum, setSum] = React.useState<SumAggregatedData | null>(null);
@@ -35,9 +35,8 @@ export function useAggregatedData(): Result {
   }, [pools, wallets, setData, setLoading]);
 
   return {
-    loading: loading || loadingWallets || loadingPools,
+    loading: loading || loadingStaticData,
     data,
     sum,
   };
 }
-

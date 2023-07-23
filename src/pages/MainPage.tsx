@@ -1,12 +1,11 @@
-import { usePoolsContext, useWalletsContext } from "@/app/providers";
+import { useStaticDataContext } from "@/app/providers";
 import { Loader } from "@mantine/core";
 import { useAggregatedData } from "@/shared";
 
 export const MainPage = () => {
-  const { loading: loadingWallets } = useWalletsContext();
-  const { loading: loadingPools } = usePoolsContext();
+  const { loading: loadingStaticData } = useStaticDataContext();
   const { loading: loadingData, data } = useAggregatedData();
-  const loading = loadingWallets || loadingPools || loadingData;
+  const loading = loadingStaticData || loadingData;
   return (
     <div className="flex justify-center items-center w-full h-full">
       {loading ? <Loader /> : <>{JSON.stringify(data, null, 2)}</>}

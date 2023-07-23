@@ -1,5 +1,5 @@
 import { MantineProvider } from "@mantine/core";
-import { WalletsProvider, AccessProvider, PoolsProvider } from ".";
+import { StaticDataProvider, AccessProvider } from ".";
 
 export function Providers({ children }: React.PropsWithChildren) {
   return (
@@ -9,9 +9,7 @@ export function Providers({ children }: React.PropsWithChildren) {
       theme={{ colorScheme: "dark" }}
     >
       <AccessProvider>
-        <WalletsProvider>
-          <PoolsProvider>{children}</PoolsProvider>
-        </WalletsProvider>
+        <StaticDataProvider>{children}</StaticDataProvider>
       </AccessProvider>
     </MantineProvider>
   );
