@@ -32,7 +32,8 @@ export function useAggregatedData(): Result {
         setLoading(false);
       }
     })();
-  }, [pools, wallets, setData, setLoading]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify([pools, wallets])]);
 
   return {
     loading: loading || loadingStaticData,
