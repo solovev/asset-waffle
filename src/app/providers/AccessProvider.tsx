@@ -25,7 +25,7 @@ const AccessContext = React.createContext<AccessContextValue>({
 
 export function AccessProvider({ children }: React.PropsWithChildren) {
   const [password, submitPassword] = React.useState(cachedPassword);
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(!!cachedPassword);
   const [key, setKey] = React.useState<CryptoKey | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [attempt, setAttempt] = React.useState<number>(0);
