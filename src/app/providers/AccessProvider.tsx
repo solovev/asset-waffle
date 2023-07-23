@@ -1,7 +1,7 @@
 import { readCache, Cache, Cipher, waitFor, writeCache } from "@/shared";
 import React, { useContext } from "react";
 
-const cachedPassword = atob(readCache(Cache.ACCESS, ""));
+const cachedPassword = readCache(Cache.ACCESS, "");
 
 interface AccessContextValue {
   password: string;
@@ -51,7 +51,7 @@ export function AccessProvider({ children }: React.PropsWithChildren) {
         );
         setKey(key);
 
-        writeCache(Cache.ACCESS, btoa(password));
+        writeCache(Cache.ACCESS, password);
       } catch (e) {
         console.warn(e);
         setError("Wrong password");
