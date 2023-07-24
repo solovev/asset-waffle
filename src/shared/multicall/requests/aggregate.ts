@@ -21,6 +21,7 @@ interface WalletBalances extends Balances {
 }
 
 export interface AggregatedData {
+  pools: { [pool: string]: { vesting: number } };
   asset: { decimals: number; supply: number; symbol: string };
   balances: { [wallet: string]: WalletBalances };
   hasErrors: boolean;
@@ -30,10 +31,11 @@ export async function fetchAndAggregateData(
   pools: string[],
   wallets: string[]
 ): Promise<AggregatedData> {
-  const { assets, balances: walletBalancesInPools } = await getBalances(
-    pools,
-    wallets
-  );
+  const {
+    assets,
+    vesting,
+    balances: walletBalancesInPools,
+  } = await getBalances(pools, wallets);
 
   const listOfAssets = Array.from(new Set(Object.values(assets)));
   if (listOfAssets.length > 1) {
@@ -77,15 +79,24 @@ export async function fetchAndAggregateData(
       hasErrors ||= pendingReward.hasError || userInfo.hasError;
     }
   }
+
   return {
     asset: {
       decimals: Number(decimals),
       supply: convertToNumber(decimals, supply),
       symbol,
     },
+    pools: mapPools(vesting),
     balances,
     hasErrors,
   };
+}
+
+function mapPools(vesting: Record<string, bigint>): AggregatedData["pools"] {
+  return Object.keys(vesting).reduce((map, pool) => {
+    map[pool] = { vesting: Number(vesting[pool]) / 60 / 60 / 24 };
+    return map;
+  }, {} as AggregatedData["pools"]);
 }
 
 export interface SumAggregatedData extends Balances {

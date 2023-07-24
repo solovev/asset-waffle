@@ -8,6 +8,7 @@ export interface Balance {
 
 interface Response {
   assets: { [pool: string]: string };
+  vesting: { [pool: string]: bigint };
   balances: {
     [wallet: string]: {
       [pool: string]: { pendingReward: Balance; userInfo: Balance };
@@ -22,14 +23,17 @@ export async function getBalances(
   const requests = createRequests(pools, wallets);
   const result = await makeMulticall(requests);
 
-  const assetsResponses = result.slice(0, pools.length);
-  const assets = mapAssets(assetsResponses);
+  const assetsResponses = result.splice(0, pools.length);
+  const assets = mapValue<string>(assetsResponses);
 
-  const balancesResponses = result.slice(assetsResponses.length);
-  const balances = mapBalances(balancesResponses);
+  const vestingResponses = result.splice(0, pools.length);
+  const vesting = mapValue<bigint>(vestingResponses);
+
+  const balances = mapBalances(result);
 
   return {
     assets,
+    vesting,
     balances,
   };
 }
@@ -45,6 +49,10 @@ function createRequests(
   }
 
   for (const pool of pools) {
+    requests.push(createPoolRequest(pool, "vestingTime"));
+  }
+
+  for (const pool of pools) {
     for (const wallet of wallets) {
       requests.push(
         createPoolRequest(pool, "pendingReward", [wallet]),
@@ -55,11 +63,11 @@ function createRequests(
   return requests;
 }
 
-function mapAssets(responses: Awaited<ReturnType<typeof makeMulticall>>) {
+function mapValue<T>(responses: Awaited<ReturnType<typeof makeMulticall>>) {
   return responses.reduce((map, { request, response }) => {
-    map[request.address] = response.data as string;
+    map[request.address] = response.data as T;
     return map;
-  }, {} as Response["assets"]);
+  }, {} as Record<string, T>);
 }
 
 function mapBalances(
