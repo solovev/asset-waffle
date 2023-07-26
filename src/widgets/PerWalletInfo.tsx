@@ -1,3 +1,4 @@
+import { useDataContext } from "@/app/providers";
 import { LabeledValue, TabularWallets } from "@/entities";
 import { Card, Paper, Text, clsx, createStyles } from "@mantine/core";
 import React from "react";
@@ -11,7 +12,6 @@ const useStyles = createStyles((theme) => ({
     backgroundColor:
       theme.colorScheme === "dark" ? theme.colors.dark[6] : theme.white,
   },
-
   pool: {
     backgroundColor:
       theme.colorScheme === "dark" ? theme.colors.dark[7] : theme.white,
@@ -20,6 +20,11 @@ const useStyles = createStyles((theme) => ({
 
 export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
   const { classes } = useStyles();
+
+  const { sum, data } = useDataContext();
+  const { asset, pools } = data!;
+  const { symbol } = asset;
+
   return (
     <Paper withBorder p="md" radius="md" className={classes.card}>
       <TabularWallets
@@ -31,57 +36,61 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
   );
 
   function renderAll() {
+    const { walletBalances, inPools } = sum!;
     return (
       <TabContent>
         <div className="flex justify-evenly items-center flex-wrap">
           <LabeledValue
             label="On Wallet(s)"
-            value="$13123"
-            description="123 ONI"
+            value={`$${walletBalances.balanceUSDT.toFixed(2)}`}
+            description={`${walletBalances.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
           <LabeledValue
             label="Total Earned"
-            value="$13123"
-            description="123 ONI"
+            value={`$${inPools.reward.balanceUSDT.toFixed(2)}`}
+            description={`${inPools.reward.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
           <LabeledValue
             label="Total Staked"
-            value="$13123"
-            description="123 ONI"
+            value={`$${inPools.staked.balanceUSDT.toFixed(2)}`}
+            description={`${inPools.staked.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
         </div>
         <div className="flex items-center flex-wrap">
-          {renderPoolCard("ONI Pool (1 month)")}
-          {renderPoolCard("ONI Pool (3 months)")}
-          {renderPoolCard("ONI Pool (1 year)")}
+          {Object.keys(pools).map(renderPoolCard)}
         </div>
       </TabContent>
     );
   }
 
-  function renderPoolCard(title: string) {
+  function renderPoolCard(poolAddress: string) {
+    const { vesting } = pools[poolAddress];
+    const balances = sum!.pools[poolAddress];
     return (
       <Card
+        key={poolAddress}
         withBorder
         p="xl"
         radius="md"
         className={clsx(classes.pool, "mt-6 flex-shrink-0 flex-grow mx-2")}
       >
-        <Text className="leading-4 text-lg mb-3">{title}</Text>
+        <Text className="leading-4 text-lg mb-3">
+          {getPoolName(vesting, symbol)}
+        </Text>
         <div className="flex items-center justify-around flex-wrap">
           <LabeledValue
             label="Earned"
-            value="$0"
-            description="0 ONI"
+            value={`$${balances.reward.balanceUSDT.toFixed(2)}`}
+            description={`${balances.reward.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
           <LabeledValue
             label="Staked"
-            value="$0"
-            description="0 ONI"
+            value={`$${balances.staked.balanceUSDT.toFixed(2)}`}
+            description={`${balances.staked.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
         </div>
@@ -92,4 +101,16 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
 
 function TabContent({ children }: React.PropsWithChildren) {
   return <div className="p-3">{children}</div>;
+}
+
+function getPoolName(vesting: number, symbol: string) {
+  let suffix = "?";
+  if (vesting < 31) {
+    suffix = "1 month";
+  } else if (vesting < 100) {
+    suffix = "3 months";
+  } else if (vesting <= 365) {
+    suffix = "1 year";
+  }
+  return `${symbol} Pool (${suffix})`
 }

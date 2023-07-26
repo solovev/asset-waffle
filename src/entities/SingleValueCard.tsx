@@ -9,7 +9,7 @@ import { LabeledValue } from ".";
 
 interface Props {
   title: string;
-  value: number;
+  value: React.ReactNode;
   diff?: number;
 }
 
