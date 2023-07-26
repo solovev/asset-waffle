@@ -38,7 +38,7 @@ jobs:
       - name: Build App
         run: yarn build
         env:
-          BASE_URL: format('/{0}', ${{ github.event.repository.name }})
+          BASE_URL: ${{ format('/{0}', github.event.repository.name) }}
           VITE_CIPHER_KEY: ${{ secrets.VITE_CIPHER_KEY }}
           VITE_SALT: ${{ secrets.VITE_SALT }}
           VITE_TIP: ${{ secrets.VITE_TIP }}
