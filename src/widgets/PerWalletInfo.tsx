@@ -1,5 +1,6 @@
 import { useDataContext } from "@/app/providers";
 import { LabeledValue, TabularWallets } from "@/entities";
+import { SumAggregatedData } from "@/shared";
 import { Card, Paper, Text, clsx, createStyles } from "@mantine/core";
 import React from "react";
 
@@ -27,23 +28,27 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
 
   return (
     <Paper withBorder p="md" radius="md" className={classes.card}>
-      <TabularWallets
-        wallets={wallets}
-        renderAll={renderAll}
-        renderContent={(wallet) => <TabContent>{wallet}</TabContent>}
-      />
+      <TabularWallets wallets={wallets} renderContent={renderContent} />
     </Paper>
   );
 
-  function renderAll() {
-    const { walletBalances, inPools } = sum!;
+  function renderContent(wallet: string) {
     return (
       <TabContent>
+        {wallet === "all" ? renderAll(sum!) : renderAll(data!.wallets[wallet])}
+      </TabContent>
+    );
+  }
+
+  function renderAll(sum: SumAggregatedData) {
+    const { inWallets, inPools } = sum!;
+    return (
+      <>
         <div className="flex justify-evenly items-center flex-wrap">
           <LabeledValue
             label="On Wallet(s)"
-            value={`$${walletBalances.balanceUSDT.toFixed(2)}`}
-            description={`${walletBalances.balance.toFixed(2)} ${symbol}`}
+            value={`$${inWallets.balanceUSDT.toFixed(2)}`}
+            description={`${inWallets.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
           <LabeledValue
@@ -60,13 +65,13 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
           />
         </div>
         <div className="flex items-center flex-wrap">
-          {Object.keys(pools).map(renderPoolCard)}
+          {Object.keys(pools).map((pool) => renderPoolCard(pool, sum))}
         </div>
-      </TabContent>
+      </>
     );
   }
 
-  function renderPoolCard(poolAddress: string) {
+  function renderPoolCard(poolAddress: string, sum: SumAggregatedData) {
     const { vesting } = pools[poolAddress];
     const balances = sum!.pools[poolAddress];
     return (
@@ -112,5 +117,5 @@ function getPoolName(vesting: number, symbol: string) {
   } else if (vesting <= 365) {
     suffix = "1 year";
   }
-  return `${symbol} Pool (${suffix})`
+  return `${symbol} Pool (${suffix})`;
 }

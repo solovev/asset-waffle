@@ -12,8 +12,7 @@ import React from "react";
 
 interface Props {
   wallets: string[];
-  renderAll: () => React.ReactNode;
-  renderContent: (wallet: string) => React.ReactNode;
+  renderContent: (wallet: "all" | string) => React.ReactNode;
 }
 
 const icons = [
@@ -25,11 +24,7 @@ const icons = [
   IconNumber5,
 ];
 
-export const TabularWallets: React.FC<Props> = ({
-  wallets,
-  renderAll,
-  renderContent,
-}) => {
+export const TabularWallets: React.FC<Props> = ({ wallets, renderContent }) => {
   return (
     <Tabs defaultValue="all">
       <Tabs.List>
@@ -38,7 +33,7 @@ export const TabularWallets: React.FC<Props> = ({
       </Tabs.List>
 
       <Tabs.Panel value="all" pt="xs">
-        {renderAll()}
+        {renderContent("all")}
       </Tabs.Panel>
 
       {wallets.map((wallet) => {

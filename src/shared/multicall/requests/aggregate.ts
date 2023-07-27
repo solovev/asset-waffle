@@ -13,26 +13,28 @@ interface PoolBalance {
   staked: Balances;
 }
 
-interface WalletBalances extends Balances {
+export interface SumAggregatedData extends Balances {
+  inWallets: Balances;
+  inPools: PoolBalance;
   pools: Record<string, PoolBalance>;
 }
 
 export interface AggregatedData {
-  pools: { [pool: string]: { vesting: number } };
   asset: { decimals: number; supply: number; symbol: string; price: number };
-  balances: { [wallet: string]: WalletBalances };
+  wallets: { [wallet: string]: SumAggregatedData };
+  pools: { [pool: string]: { vesting: number } };
   hasErrors: boolean;
 }
 
 export async function fetchAndAggregateData(
   pools: string[],
-  wallets: string[]
+  walletAddresses: string[]
 ): Promise<AggregatedData> {
   const {
     assets,
     vesting,
     balances: walletBalancesInPools,
-  } = await getBalances(pools, wallets);
+  } = await getBalances(pools, walletAddresses);
 
   const listOfAssets = Array.from(new Set(Object.values(assets)));
   if (listOfAssets.length > 1) {
@@ -43,27 +45,34 @@ export async function fetchAndAggregateData(
 
   const { decimals, supply, symbol, walletBalances } = await getAssetData(
     asset,
-    wallets
+    walletAddresses
   );
 
   const price = await getPrice(decimals, asset);
 
   let hasErrors = price === 0;
-  const balances: AggregatedData["balances"] = {};
+  const wallets: AggregatedData["wallets"] = {};
 
-  for (const wallet of wallets) {
-    const walletBalance = walletBalances[wallet];
+  for (const walletAddress of walletAddresses) {
+    const walletBalance = walletBalances[walletAddress];
     hasErrors ||= walletBalance.hasError;
 
-    const balance = (balances[wallet] = {
-      balance: toNumber(walletBalance.value, decimals),
-      balanceUSDT: toUSDT(walletBalance.value, decimals, price),
-      pools: {} as Record<string, PoolBalance>,
-    });
+    const balance = (wallets[walletAddress] = getInitial());
+
+    balance.inWallets.balance = toNumber(walletBalance.value, decimals);
+    balance.inWallets.balanceUSDT = toUSDT(
+      walletBalance.value,
+      decimals,
+      price
+    );
+
+    balance.balance += balance.inWallets.balance;
+    balance.balanceUSDT += balance.inWallets.balanceUSDT;
 
     for (const pool of pools) {
-      const { pendingReward, userInfo } = walletBalancesInPools[wallet][pool];
-      balance.pools[pool] = {
+      const { pendingReward, userInfo } =
+        walletBalancesInPools[walletAddress][pool];
+      const balanceInPool = {
         reward: {
           balance: toNumber(pendingReward.value, decimals),
           balanceUSDT: toUSDT(pendingReward.value, decimals, price),
@@ -73,6 +82,19 @@ export async function fetchAndAggregateData(
           balanceUSDT: toUSDT(userInfo.value, decimals, price),
         },
       };
+
+      balance.inPools.reward.balance += balanceInPool.reward.balance;
+      balance.inPools.reward.balanceUSDT += balanceInPool.reward.balanceUSDT;
+      balance.inPools.staked.balance += balanceInPool.staked.balance;
+      balance.inPools.staked.balanceUSDT += balanceInPool.staked.balanceUSDT;
+
+      balance.balance +=
+        balanceInPool.reward.balance + balanceInPool.staked.balance;
+      balance.balanceUSDT +=
+        balanceInPool.reward.balanceUSDT + balanceInPool.staked.balanceUSDT;
+
+      balance.pools[pool] = balanceInPool;
+
       hasErrors ||= pendingReward.hasError || userInfo.hasError;
     }
   }
@@ -85,7 +107,7 @@ export async function fetchAndAggregateData(
       price,
     },
     pools: mapPools(vesting),
-    balances,
+    wallets,
     hasErrors,
   };
 }
@@ -97,74 +119,66 @@ function mapPools(vesting: Record<string, bigint>): AggregatedData["pools"] {
   }, {} as AggregatedData["pools"]);
 }
 
-export interface SumAggregatedData extends Balances {
-  walletBalances: Balances;
-  inPools: PoolBalance;
-  pools: Record<string, PoolBalance>;
+export function sumAggregatedData(forWallets: string[], data: AggregatedData) {
+  return forWallets.reduce((sumAggregatedData, wallet) => {
+    const { balance, balanceUSDT, inWallets, inPools, pools } =
+      data.wallets[wallet];
+
+    sumAggregatedData.balance += balance;
+    sumAggregatedData.balanceUSDT += balanceUSDT;
+
+    sumAggregatedData.inWallets.balance += inWallets.balance;
+    sumAggregatedData.inWallets.balanceUSDT += inWallets.balanceUSDT;
+
+    sumAggregatedData.inPools.reward.balance += inPools.reward.balance;
+    sumAggregatedData.inPools.reward.balanceUSDT += inPools.reward.balanceUSDT;
+    sumAggregatedData.inPools.staked.balance += inPools.staked.balance;
+    sumAggregatedData.inPools.staked.balanceUSDT += inPools.staked.balanceUSDT;
+
+    Object.keys(pools).forEach((pool) => {
+      const { reward, staked } = pools[pool];
+
+      if (!sumAggregatedData.pools[pool]) {
+        sumAggregatedData.pools[pool] = {
+          reward: {
+            balance: 0,
+            balanceUSDT: 0,
+          },
+          staked: {
+            balance: 0,
+            balanceUSDT: 0,
+          },
+        };
+      }
+
+      const sumPool = sumAggregatedData.pools[pool];
+      sumPool.reward.balance += reward.balance;
+      sumPool.reward.balanceUSDT += reward.balanceUSDT;
+      sumPool.staked.balance += staked.balance;
+      sumPool.staked.balanceUSDT += staked.balanceUSDT;
+    });
+
+    return sumAggregatedData;
+  }, getInitial());
 }
 
-export function sumAggregatedData(forWallets: string[], data: AggregatedData) {
-  return forWallets.reduce(
-    (sumAggregatedData, wallet) => {
-      const { balance, balanceUSDT, pools } = data.balances[wallet];
-
-      sumAggregatedData.walletBalances.balance += balance;
-      sumAggregatedData.walletBalances.balanceUSDT += balanceUSDT;
-
-      sumAggregatedData.balance += balance;
-      sumAggregatedData.balanceUSDT += balanceUSDT;
-
-      Object.keys(pools).forEach((pool) => {
-        const { reward, staked } = pools[pool];
-
-        if (!sumAggregatedData.pools[pool]) {
-          sumAggregatedData.pools[pool] = {
-            reward: {
-              balance: 0,
-              balanceUSDT: 0,
-            },
-            staked: {
-              balance: 0,
-              balanceUSDT: 0,
-            },
-          };
-        }
-
-        const sumPool = sumAggregatedData.pools[pool];
-        sumPool.reward.balance += reward.balance;
-        sumPool.reward.balanceUSDT += reward.balanceUSDT;
-        sumPool.staked.balance += staked.balance;
-        sumPool.staked.balanceUSDT += staked.balanceUSDT;
-
-        sumAggregatedData.inPools.reward.balance += reward.balance;
-        sumAggregatedData.inPools.reward.balanceUSDT += reward.balanceUSDT;
-        sumAggregatedData.inPools.staked.balance += staked.balance;
-        sumAggregatedData.inPools.staked.balanceUSDT += staked.balanceUSDT;
-
-        sumAggregatedData.balance += reward.balance + staked.balance;
-        sumAggregatedData.balanceUSDT +=
-          reward.balanceUSDT + staked.balanceUSDT;
-      });
-
-      return sumAggregatedData;
-    },
-    {
+function getInitial(): SumAggregatedData {
+  return {
+    balance: 0,
+    balanceUSDT: 0,
+    pools: {},
+    inWallets: {
       balance: 0,
       balanceUSDT: 0,
-      pools: {},
-      walletBalances: {
+    },
+    inPools: {
+      reward: {
         balance: 0,
         balanceUSDT: 0,
       },
-      inPools: {
-        reward: {
-          balance: 0,
-          balanceUSDT: 0,
-        },
-        staked: { balance: 0, balanceUSDT: 0 },
-      },
-    } as SumAggregatedData
-  );
+      staked: { balance: 0, balanceUSDT: 0 },
+    },
+  };
 }
 
 function toNumber(value: bigint, decimals: bigint): number {
