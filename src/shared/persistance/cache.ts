@@ -1,33 +1,45 @@
-import { Cipher } from "@/shared";
+import { Cipher } from "@/shared/crypto";
 
 const SEPARATOR = "@";
+const CACHE_VERSION = "1";
+
+if (localStorage.getItem("CACHE_VERSION") !== CACHE_VERSION) {
+  localStorage.clear();
+  localStorage.setItem("CACHE_VERSION", CACHE_VERSION);
+}
 
 export enum Cache {
   ACCESS = "ACCESS",
   WALLETS = "WALLETS",
   POOLS = "POOLS",
+  DATA = "DATA",
 }
 
 export function readCache<T = NonNullable<unknown>>(
   key: Cache,
-  defaultValue: T
+  defaultValue: T,
+  decode = true
 ): T {
   try {
     const cache = getCache(key);
     if (!cache) {
       return defaultValue;
     }
-    return JSON.parse(atob(cache)) as T;
+    return JSON.parse(decode ? atob(cache) : cache) as T;
   } catch (e) {
     console.warn(e);
     return defaultValue;
   }
 }
 
-export function writeCache(key: Cache, value: NonNullable<unknown>) {
+export function writeCache(
+  key: Cache,
+  value: NonNullable<unknown>,
+  encode = true
+) {
   try {
     const stringValue = JSON.stringify(value);
-    localStorage.setItem(key, btoa(stringValue));
+    localStorage.setItem(key, encode ? btoa(stringValue) : stringValue);
   } catch (e) {
     console.warn(e);
   }

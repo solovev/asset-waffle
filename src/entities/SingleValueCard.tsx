@@ -1,4 +1,11 @@
-import { Group, Paper, Text, ThemeIcon, createStyles } from "@mantine/core";
+import {
+  Group,
+  Paper,
+  Popover,
+  Text,
+  ThemeIcon,
+  createStyles,
+} from "@mantine/core";
 import {
   IconArrowUpRight,
   IconArrowDownRight,
@@ -11,6 +18,7 @@ interface Props {
   title: string;
   value: React.ReactNode;
   diff?: number;
+  cacheDate?: string;
 }
 
 const useStyles = createStyles((theme) => ({
@@ -20,7 +28,12 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-export const SingleValueCard: React.FC<Props> = ({ diff, title, value }) => {
+export const SingleValueCard: React.FC<Props> = ({
+  diff,
+  title,
+  value,
+  cacheDate,
+}) => {
   const { classes } = useStyles();
   return (
     <Paper withBorder p="md" radius="md" key={title} className={classes.card}>
@@ -56,16 +69,9 @@ export const SingleValueCard: React.FC<Props> = ({ diff, title, value }) => {
     if (!diff) {
       return null;
     }
-    const sign = diff > 0 ? "+" : diff < 0 ? "-" : "";
     return (
       <Text c="dimmed" fz="sm" mt="md" className="flex items-center">
-        <div>
-          <Text component="span" c={diff > 0 ? "teal" : "red"} fw={700}>
-            {sign}
-            {Math.abs(diff)}%
-          </Text>{" "}
-          compared to the last check
-        </div>
+        <div>{renderChange(diff)} compared to the last check</div>
         <ThemeIcon
           color="gray"
           variant="filled"
@@ -73,9 +79,54 @@ export const SingleValueCard: React.FC<Props> = ({ diff, title, value }) => {
           radius="md"
           className="ml-1"
         >
-          <IconQuestionMark />
+          {cacheDate && renderQuestionMark()}
         </ThemeIcon>
       </Text>
     );
+  }
+
+  function renderChange(value: number) {
+    const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+    return (
+      <Popover width={200} position="top" withArrow shadow="md">
+        <Popover.Target>
+          <Text
+            component="span"
+            c={value > 0 ? "teal" : "red"}
+            fw={700}
+            className="cursor-pointer"
+          >
+            {sign}
+            {round(Math.abs(value))}%
+          </Text>
+        </Popover.Target>
+        <Popover.Dropdown>
+          <Text size="sm" color="white">
+            {sign}
+            {Math.abs(value)}%
+          </Text>
+        </Popover.Dropdown>
+      </Popover>
+    );
+  }
+
+  function renderQuestionMark() {
+    return (
+      <Popover width={200} position="bottom" withArrow shadow="md">
+        <Popover.Target>
+          <IconQuestionMark className="cursor-pointer" />
+        </Popover.Target>
+        <Popover.Dropdown>
+          <Text size="sm">Compared to {new Date(cacheDate!).toUTCString()}</Text>
+        </Popover.Dropdown>
+      </Popover>
+    );
+  }
+
+  function round(value: number) {
+    if (value >= 1) {
+      return Math.round(value);
+    }
+    return value.toFixed(20).match(/^-?\d*\.?0*\d{0,2}/)?.[0];
   }
 };

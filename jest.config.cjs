@@ -4,6 +4,9 @@ const cwd = global.process.cwd();
 // eslint-disable-next-line no-undef
 module.exports = {
   setupFiles: ["<rootDir>/tests/setupTests.js"],
+  moduleNameMapper: {
+    "^@/(.*)": "<rootDir>/src/$1",
+  },
   transform: {
     "^.+\\.(t|j)sx?$": [
       "jest-chain-transform",
