@@ -16,17 +16,18 @@ interface Result {
 }
 
 export function useAggregatedData(): Result {
-  const { wallets, pools, loading: loadingStaticData } = useStaticDataContext();
-  const [loading, setLoading] = React.useState(true);
+  const { wallets, pools } = useStaticDataContext();
+  const [loading, setLoading] = React.useState(wallets.length > 0);
   const [data, setData] = React.useState<AggregatedData | null>(null);
   const [sum, setSum] = React.useState<SumAggregatedData | null>(null);
 
   React.useEffect(() => {
     (async () => {
       if (pools.length > 0 && wallets.length > 0) {
+        const addresses = wallets.map((wallet) => wallet.address);
         setLoading(true);
-        const data = await fetchAndAggregateData(pools, wallets);
-        const sumData = sumAggregatedData(wallets, data);
+        const data = await fetchAndAggregateData(pools, addresses);
+        const sumData = sumAggregatedData(addresses, data);
         setSum(sumData);
         setData(data);
         setLoading(false);
@@ -36,7 +37,7 @@ export function useAggregatedData(): Result {
   }, [JSON.stringify([pools, wallets])]);
 
   return {
-    loading: loading || loadingStaticData,
+    loading,
     data,
     sum,
   };

@@ -81,3 +81,10 @@ export function getCacheList<T = NonNullable<unknown>>(
 
   return result;
 }
+
+export function clearDateCaches(key: Cache) {
+  const list = getCacheList(key);
+  for (const { date } of list) {
+    clearCache(getKey(key, date));
+  }
+}

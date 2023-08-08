@@ -3,6 +3,8 @@ import {
   AggregatedData,
   Cache,
   SumAggregatedData,
+  getDefaultAggregatedData,
+  getDefaultSumAggregatedData,
   getRecentCache,
   useAggregatedData,
   writeCacheForToday,
@@ -10,8 +12,8 @@ import {
 import get from "lodash.get";
 
 interface DataContextValue {
-  data: AggregatedData | null;
-  sum: SumAggregatedData | null;
+  data: AggregatedData;
+  sum: SumAggregatedData;
   cache: {
     date: string;
     value: Pick<DataContextValue, "data" | "sum">;
@@ -23,8 +25,8 @@ interface DataContextValue {
 type DataCache = NonNullable<DataContextValue["cache"]>["value"];
 
 const DataContext = React.createContext<DataContextValue>({
-  data: null,
-  sum: null,
+  data: getDefaultAggregatedData(),
+  sum: getDefaultSumAggregatedData(),
   cache: null,
   loading: true,
   getChange: () => 0,
@@ -41,10 +43,14 @@ export function DataProvider({ children }: React.PropsWithChildren) {
     }
   }, [data, sum]);
 
-  const contextValue = { data, sum, loading, cache };
+  const contextValue = {
+    data: data ?? getDefaultAggregatedData(),
+    sum: sum ?? getDefaultSumAggregatedData(),
+    loading,
+    cache,
+  };
 
   const getChange = (path: string): number => {
-    console.log(cache, contextValue)
     const cacheValue = get(cache, "value." + path, 0);
     const value = get(contextValue, path, 0);
     if (cacheValue === 0) {

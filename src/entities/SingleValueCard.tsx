@@ -71,7 +71,7 @@ export const SingleValueCard: React.FC<Props> = ({
     }
     return (
       <Text c="dimmed" fz="sm" mt="md" className="flex items-center">
-        <div>{renderChange(diff)} compared to the last check</div>
+        <div>{renderChange(diff)} compared to the last visit</div>
         <ThemeIcon
           color="gray"
           variant="filled"

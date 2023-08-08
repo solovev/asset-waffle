@@ -57,7 +57,7 @@ export async function fetchAndAggregateData(
     const walletBalance = walletBalances[walletAddress];
     hasErrors ||= walletBalance.hasError;
 
-    const balance = (wallets[walletAddress] = getInitial());
+    const balance = (wallets[walletAddress] = getDefaultSumAggregatedData());
 
     balance.inWallets.balance = toNumber(walletBalance.value, decimals);
     balance.inWallets.balanceUSDT = toUSDT(
@@ -159,10 +159,10 @@ export function sumAggregatedData(forWallets: string[], data: AggregatedData) {
     });
 
     return sumAggregatedData;
-  }, getInitial());
+  }, getDefaultSumAggregatedData());
 }
 
-function getInitial(): SumAggregatedData {
+export function getDefaultSumAggregatedData(): SumAggregatedData {
   return {
     balance: 0,
     balanceUSDT: 0,
@@ -178,6 +178,20 @@ function getInitial(): SumAggregatedData {
       },
       staked: { balance: 0, balanceUSDT: 0 },
     },
+  };
+}
+
+export function getDefaultAggregatedData(): AggregatedData {
+  return {
+    asset: {
+      decimals: 0,
+      supply: 0,
+      symbol: "Unknown",
+      price: 0,
+    },
+    pools: {},
+    wallets: {},
+    hasErrors: false,
   };
 }
 

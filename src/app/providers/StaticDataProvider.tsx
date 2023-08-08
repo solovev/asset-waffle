@@ -1,51 +1,42 @@
-import { Cache, readCipherCache } from "@/shared";
+import { Cache, clearDateCaches, readCache, writeCache } from "@/shared";
 import React, { useContext } from "react";
-import { useAccessContext } from ".";
+
+export interface Wallet {
+  address: string;
+  label: string;
+}
 
 interface StaticDataContextValue {
   pools: string[];
-  wallets: string[];
-  loading: boolean;
+  wallets: Wallet[];
+  setPools: (pools: string[]) => void;
+  setWallets: (wallets: Wallet[]) => void;
 }
 
 const StaticDataContext = React.createContext<StaticDataContextValue>({
   pools: [],
   wallets: [],
-  loading: true,
+  setPools: () => {},
+  setWallets: () => {},
 });
 
 export function StaticDataProvider({ children }: React.PropsWithChildren) {
-  const [pools, setPools] = React.useState<string[]>([]);
-  const [wallets, setWallets] = React.useState<string[]>([]);
+  const [pools, setPools] = React.useState<string[]>(
+    readCache<string[]>(Cache.POOLS, import.meta.env.VITE_POOLS.split(','))
+  );
+  const [wallets, setWalletsInternal] = React.useState<Wallet[]>(
+    readCache<Wallet[]>(Cache.WALLETS, [])
+  );
 
-  const [initialized, setInitialized] = React.useState(false);
-
-  const { key, logout } = useAccessContext();
-
-  React.useEffect(() => {
-    (async () => {
-      if (!key) {
-        return;
-      }
-
-      try {
-        const pools = await readCipherCache<string[]>(Cache.POOLS, key, []);
-        const wallets = await readCipherCache<string[]>(Cache.WALLETS, key, []);
-
-        setPools(pools);
-        setWallets(wallets);
-        setInitialized(true);
-      } catch (e) {
-        console.warn(e);
-        // Unable to decrypt cache -> move to login page.
-        logout();
-      }
-    })();
-  }, [initialized, key, logout]);
+  const setWallets = React.useCallback((wallets: Wallet[]) => {
+    clearDateCaches(Cache.DATA);
+    writeCache(Cache.WALLETS, wallets);
+    setWalletsInternal(wallets);
+  }, []);
 
   return (
     <StaticDataContext.Provider
-      value={{ pools, wallets, loading: !initialized }}
+      value={{ pools, wallets, setPools, setWallets }}
     >
       {children}
     </StaticDataContext.Provider>

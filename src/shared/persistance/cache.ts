@@ -1,7 +1,4 @@
-import { Cipher } from "@/shared/crypto";
-
-const SEPARATOR = "@";
-const CACHE_VERSION = "1";
+const CACHE_VERSION = "2";
 
 if (localStorage.getItem("CACHE_VERSION") !== CACHE_VERSION) {
   localStorage.clear();
@@ -53,32 +50,6 @@ export function clearCache(key: Cache) {
   }
 }
 
-export async function writeCipherCache(
-  cacheKey: Cache,
-  cipherKey: CryptoKey,
-  value: NonNullable<unknown>
-) {
-  const data = JSON.stringify(value);
-  const cipher = new Cipher();
-  const { encrypted, iv } = await cipher.encrypt(data, cipherKey);
-  localStorage.setItem(cacheKey, encrypted + SEPARATOR + iv);
-}
-
-export async function readCipherCache<T = NonNullable<unknown>>(
-  cacheKey: Cache,
-  cipherKey: CryptoKey,
-  defaultValue: T
-): Promise<T> {
-  const cache = getCache(cacheKey);
-  if (!cache) {
-    return defaultValue;
-  }
-  const [encrypted, iv] = cache.split(SEPARATOR);
-  const cipher = new Cipher();
-  const data = await cipher.decrypt(encrypted, cipherKey, iv);
-  return JSON.parse(data) as T;
-}
-
 function getCache(key: Cache): string | null {
-  return localStorage.getItem(key) || import.meta.env["VITE_" + key] || null;
+  return localStorage.getItem(key) || null;
 }

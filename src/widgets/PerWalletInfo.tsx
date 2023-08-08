@@ -1,11 +1,11 @@
-import { useDataContext } from "@/app/providers";
+import { Wallet, useDataContext } from "@/app/providers";
 import { LabeledValue, TabularWallets } from "@/entities";
 import { SumAggregatedData } from "@/shared";
 import { Card, Paper, Text, clsx, createStyles } from "@mantine/core";
 import React from "react";
 
 interface Props {
-  wallets: string[];
+  wallets: Wallet[];
 }
 
 const useStyles = createStyles((theme) => ({
@@ -23,7 +23,7 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
   const { classes } = useStyles();
 
   const { sum, data } = useDataContext();
-  const { asset, pools } = data!;
+  const { asset, pools } = data;
   const { symbol } = asset;
 
   return (
@@ -32,16 +32,22 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
     </Paper>
   );
 
-  function renderContent(wallet: string) {
+  function renderContent(walletAddress: string) {
     return (
       <TabContent>
-        {wallet === "all" ? renderAll(sum!) : renderAll(data!.wallets[wallet])}
+        {walletAddress === "all"
+          ? renderAll(sum)
+          : renderAll(data.wallets[walletAddress])}
       </TabContent>
     );
   }
 
-  function renderAll(sum: SumAggregatedData) {
-    const { inWallets, inPools } = sum!;
+  function renderAll(sum?: SumAggregatedData) {
+    if (!sum) {
+      return null;
+    }
+
+    const { inWallets, inPools } = sum;
     return (
       <>
         <div className="flex justify-evenly items-center flex-wrap">
@@ -73,7 +79,7 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
 
   function renderPoolCard(poolAddress: string, sum: SumAggregatedData) {
     const { vesting } = pools[poolAddress];
-    const balances = sum!.pools[poolAddress];
+    const balances = sum.pools[poolAddress];
     return (
       <Card
         key={poolAddress}
