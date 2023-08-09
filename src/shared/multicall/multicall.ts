@@ -1,4 +1,10 @@
-import { Contract, Interface, InterfaceAbi, JsonRpcProvider, Provider } from "ethers";
+import {
+  Contract,
+  Interface,
+  InterfaceAbi,
+  JsonRpcProvider,
+  Provider,
+} from "ethers";
 import { MULTICALL_ABI } from "./abi/multicall-abi";
 
 export interface MulticallRequest {
@@ -6,12 +12,13 @@ export interface MulticallRequest {
   abi: InterfaceAbi;
   functionName: string;
   args: NonNullable<unknown>[];
+  takeValues?: number[];
   allowFailure?: boolean;
 }
 
-export interface MulticallResponse {
+export interface MulticallResponse<T = unknown> {
   success: boolean;
-  data: NonNullable<unknown>;
+  data: NonNullable<T>;
 }
 
 interface Aggregate3Request {
@@ -51,7 +58,12 @@ export class Multicall {
   public async makeRequest(): Promise<MulticallResponse[]> {
     const results: Aggregate3Response[] =
       await this.contract.aggregate3.staticCall(this.requestData);
-    return results.map(({ success, returnData }, index): MulticallResponse => ({ success, data: this.responseDecoders[index](returnData) }));
+    return results.map(
+      ({ success, returnData }, index): MulticallResponse => ({
+        success,
+        data: this.responseDecoders[index](returnData),
+      })
+    );
   }
 
   /**
@@ -85,11 +97,21 @@ export class Multicall {
    * @returns The decoders list.
    */
   private createResponseDecoders(): Aggregate3ReturnDataDecoder[] {
-    return this.requests.map(({ functionName }, index) => (returnData: string) =>
-        this.interfaces[index].decodeFunctionResult(
-          functionName,
-          returnData
-        )[0]);
+    return this.requests.map(
+      ({ functionName, takeValues }, index) =>
+        (returnData: string) => {
+          const result = this.interfaces[index].decodeFunctionResult(
+            functionName,
+            returnData
+          );
+          if (!takeValues || !takeValues.length) {
+            return result[0];
+          }
+          return Array.from(result).filter((_, index) =>
+            takeValues.includes(index)
+          );
+        }
+    );
   }
 }
 

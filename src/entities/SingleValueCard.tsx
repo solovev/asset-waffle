@@ -117,7 +117,9 @@ export const SingleValueCard: React.FC<Props> = ({
           <IconQuestionMark className="cursor-pointer" />
         </Popover.Target>
         <Popover.Dropdown>
-          <Text size="sm">Compared to {new Date(cacheDate!).toUTCString()}</Text>
+          <Text size="sm">
+            Compared to {new Date(cacheDate!).toLocaleDateString()}
+          </Text>
         </Popover.Dropdown>
       </Popover>
     );

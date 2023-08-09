@@ -13,10 +13,14 @@ interface PoolBalance {
   staked: Balances;
 }
 
+interface PoolInfo extends PoolBalance {
+  lastDepositedAt: number;
+}
+
 export interface SumAggregatedData extends Balances {
   inWallets: Balances;
   inPools: PoolBalance;
-  pools: Record<string, PoolBalance>;
+  pools: Record<string, PoolInfo>;
 }
 
 export interface AggregatedData {
@@ -70,32 +74,32 @@ export async function fetchAndAggregateData(
     balance.balanceUSDT += balance.inWallets.balanceUSDT;
 
     for (const pool of pools) {
-      const { pendingReward, userInfo } =
+      const { pendingReward, balanceAmount, lastDepositedAt } =
         walletBalancesInPools[walletAddress][pool];
-      const balanceInPool = {
+      const poolInfo = {
         reward: {
           balance: toNumber(pendingReward.value, decimals),
           balanceUSDT: toUSDT(pendingReward.value, decimals, price),
         },
         staked: {
-          balance: toNumber(userInfo.value, decimals),
-          balanceUSDT: toUSDT(userInfo.value, decimals, price),
+          balance: toNumber(balanceAmount.value, decimals),
+          balanceUSDT: toUSDT(balanceAmount.value, decimals, price),
         },
+        lastDepositedAt,
       };
 
-      balance.inPools.reward.balance += balanceInPool.reward.balance;
-      balance.inPools.reward.balanceUSDT += balanceInPool.reward.balanceUSDT;
-      balance.inPools.staked.balance += balanceInPool.staked.balance;
-      balance.inPools.staked.balanceUSDT += balanceInPool.staked.balanceUSDT;
+      balance.inPools.reward.balance += poolInfo.reward.balance;
+      balance.inPools.reward.balanceUSDT += poolInfo.reward.balanceUSDT;
+      balance.inPools.staked.balance += poolInfo.staked.balance;
+      balance.inPools.staked.balanceUSDT += poolInfo.staked.balanceUSDT;
 
-      balance.balance +=
-        balanceInPool.reward.balance + balanceInPool.staked.balance;
+      balance.balance += poolInfo.reward.balance + poolInfo.staked.balance;
       balance.balanceUSDT +=
-        balanceInPool.reward.balanceUSDT + balanceInPool.staked.balanceUSDT;
+        poolInfo.reward.balanceUSDT + poolInfo.staked.balanceUSDT;
 
-      balance.pools[pool] = balanceInPool;
+      balance.pools[pool] = poolInfo;
 
-      hasErrors ||= pendingReward.hasError || userInfo.hasError;
+      hasErrors ||= pendingReward.hasError || balanceAmount.hasError;
     }
   }
 
@@ -114,7 +118,7 @@ export async function fetchAndAggregateData(
 
 function mapPools(vesting: Record<string, bigint>): AggregatedData["pools"] {
   return Object.keys(vesting).reduce((map, pool) => {
-    map[pool] = { vesting: Number(vesting[pool]) / 60 / 60 / 24 };
+    map[pool] = { vesting: Number(vesting[pool]) };
     return map;
   }, {} as AggregatedData["pools"]);
 }
@@ -148,6 +152,7 @@ export function sumAggregatedData(forWallets: string[], data: AggregatedData) {
             balance: 0,
             balanceUSDT: 0,
           },
+          lastDepositedAt: 0,
         };
       }
 
@@ -156,6 +161,7 @@ export function sumAggregatedData(forWallets: string[], data: AggregatedData) {
       sumPool.reward.balanceUSDT += reward.balanceUSDT;
       sumPool.staked.balance += staked.balance;
       sumPool.staked.balanceUSDT += staked.balanceUSDT;
+      sumPool.lastDepositedAt = 0;
     });
 
     return sumAggregatedData;

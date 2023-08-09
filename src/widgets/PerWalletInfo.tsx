@@ -1,5 +1,6 @@
 import { Wallet, useDataContext } from "@/app/providers";
 import { LabeledValue, TabularWallets } from "@/entities";
+import { VestingProgress } from "@/features";
 import { SumAggregatedData } from "@/shared";
 import { Card, Paper, Text, clsx, createStyles } from "@mantine/core";
 import React from "react";
@@ -36,13 +37,13 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
     return (
       <TabContent>
         {walletAddress === "all"
-          ? renderAll(sum)
-          : renderAll(data.wallets[walletAddress])}
+          ? renderAll(null, sum)
+          : renderAll(walletAddress, data.wallets[walletAddress])}
       </TabContent>
     );
   }
 
-  function renderAll(sum?: SumAggregatedData) {
+  function renderAll(walletAddress: string | null, sum?: SumAggregatedData) {
     if (!sum) {
       return null;
     }
@@ -71,15 +72,21 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
           />
         </div>
         <div className="flex items-center flex-wrap">
-          {Object.keys(pools).map((pool) => renderPoolCard(pool, sum))}
+          {Object.keys(pools).map((pool) =>
+            renderPoolCard(walletAddress, pool, sum)
+          )}
         </div>
       </>
     );
   }
 
-  function renderPoolCard(poolAddress: string, sum: SumAggregatedData) {
+  function renderPoolCard(
+    walletAddress: string | null,
+    poolAddress: string,
+    sum: SumAggregatedData
+  ) {
     const { vesting } = pools[poolAddress];
-    const balances = sum.pools[poolAddress];
+    const { reward, staked } = sum.pools[poolAddress];
     return (
       <Card
         key={poolAddress}
@@ -94,17 +101,21 @@ export const PerWalletInfo: React.FC<Props> = ({ wallets }) => {
         <div className="flex items-center justify-around flex-wrap">
           <LabeledValue
             label="Earned"
-            value={`$${balances.reward.balanceUSDT.toFixed(2)}`}
-            description={`${balances.reward.balance.toFixed(2)} ${symbol}`}
+            value={`$${reward.balanceUSDT.toFixed(2)}`}
+            description={`${reward.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
           <LabeledValue
             label="Staked"
-            value={`$${balances.staked.balanceUSDT.toFixed(2)}`}
-            description={`${balances.staked.balance.toFixed(2)} ${symbol}`}
+            value={`$${staked.balanceUSDT.toFixed(2)}`}
+            description={`${staked.balance.toFixed(2)} ${symbol}`}
             className="m-4"
           />
         </div>
+        <VestingProgress
+          poolAddress={poolAddress}
+          walletAddress={walletAddress}
+        />
       </Card>
     );
   }
@@ -116,6 +127,7 @@ function TabContent({ children }: React.PropsWithChildren) {
 
 function getPoolName(vesting: number, symbol: string) {
   let suffix = "?";
+  vesting = vesting / 60 / 60 / 24;
   if (vesting < 31) {
     suffix = "1 month";
   } else if (vesting < 100) {

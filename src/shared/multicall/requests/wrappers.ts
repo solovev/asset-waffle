@@ -7,13 +7,15 @@ import PancakeSwapV2 from "@/shared/multicall/abi/PancakeSwapV2.json";
 export function createPoolRequest(
   address: string,
   functionName: string,
-  args: NonNullable<unknown>[] = []
+  args: NonNullable<unknown>[] = [],
+  takeValues?: number[]
 ): MulticallRequest {
   return {
     address: address,
     abi: PoolABI,
     functionName,
     args,
+    takeValues,
   };
 }
 

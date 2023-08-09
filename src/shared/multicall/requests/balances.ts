@@ -6,12 +6,18 @@ export interface Balance {
   hasError: boolean;
 }
 
+interface BalanceResponse {
+  pendingReward: Balance;
+  balanceAmount: Balance;
+  lastDepositedAt: number;
+}
+
 interface Response {
   assets: { [pool: string]: string };
   vesting: { [pool: string]: bigint };
   balances: {
     [wallet: string]: {
-      [pool: string]: { pendingReward: Balance; userInfo: Balance };
+      [pool: string]: BalanceResponse;
     };
   };
 }
@@ -56,7 +62,7 @@ function createRequests(
     for (const wallet of wallets) {
       requests.push(
         createPoolRequest(pool, "pendingReward", [wallet]),
-        createPoolRequest(pool, "userInfo", [wallet])
+        createPoolRequest(pool, "userInfo", [wallet], [0, 2])
       );
     }
   }
@@ -81,10 +87,27 @@ function mapBalances(
     const pool = request.address;
     const data = pools[pool] || (pools[pool] = getDefault());
     const key = request.functionName as "pendingReward" | "userInfo";
-    data[key] = parseBalance(response);
-  }
 
+    switch (key) {
+      case "pendingReward":
+        data[key] = parseBalance(response);
+        break;
+      case "userInfo":
+        parseUserInfo(data, response as MulticallResponse<bigint[]>);
+        break;
+      default:
+        throw new Error(`Unknown key: "${key}"`);
+    }
+  }
   return wallets;
+}
+
+function parseUserInfo(
+  balance: BalanceResponse,
+  { data, success }: MulticallResponse<bigint[]>
+) {
+  balance["balanceAmount"] = parseBalance({ data: data[0], success });
+  balance["lastDepositedAt"] = Number(data[1]);
 }
 
 export function parseBalance(response: MulticallResponse) {
@@ -94,9 +117,10 @@ export function parseBalance(response: MulticallResponse) {
   };
 }
 
-function getDefault() {
+function getDefault(): BalanceResponse {
   return {
     pendingReward: { value: 0n, hasError: false },
-    userInfo: { value: 0n, hasError: false },
+    balanceAmount: { value: 0n, hasError: false },
+    lastDepositedAt: 0,
   };
 }

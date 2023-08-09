@@ -43,7 +43,7 @@ export const DeleteWalletModal: React.FC<Props> = ({
       <Modal
         opened={opened}
         onClose={close}
-        title="Remove wallet"
+        title="Delete this wallet"
         overlayProps={{
           color:
             theme.colorScheme === "dark"
@@ -53,7 +53,7 @@ export const DeleteWalletModal: React.FC<Props> = ({
           blur: 3,
         }}
       >
-        <div>Are you sure you want to delete the "{label}" wallet?</div>
+        <div>Are you sure you want to delete wallet "{label}"?</div>
         {label !== wallet?.address && (
           <div>Address is: "{wallet?.address}"</div>
         )}
